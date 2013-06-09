@@ -1,0 +1,17 @@
+[
+  {
+    "id": "prove",
+    "caption": "prove",
+    "command": "prove"
+  },
+  {
+    "id": "prove method",
+    "caption": "prove method",
+    "command": "prove_method"
+  },
+  {
+    "id": "prove all",
+    "caption": "prove all",
+    "command": "prove_all"
+  }
+]
