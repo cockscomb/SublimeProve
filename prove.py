@@ -89,6 +89,9 @@ class ProveCommand(ExecTestCommand):
         return env
         
     def test_file_name_by_class_name(self, class_name):
+        if re.match('^t::', class_name):
+            return self.view.file_name()
+
         parts = re.split('\W+', class_name)
         parts.pop(-1)
         name = '-'.join(parts)
