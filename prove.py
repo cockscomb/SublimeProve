@@ -53,19 +53,16 @@ class ExecTestCommand(sublime_plugin.TextCommand):
         self.view.window().run_command('show_panel', {'panel': 'output.prove_result_panel'})
 
     def get_project_root(self):
-        """/any/paths/.git seems repository's root directory"""
+        """find git repository root with git command"""
         filename = self.view.file_name()
         if not filename:
             return None
 
-        dir = os.path.dirname(filename)
-        while True:
-            dot_git = os.path.join(dir, '.git')
-            if os.path.exists(dot_git) and os.path.isdir(dot_git):
-                return dir
-            dir = os.path.abspath(os.path.join(dir, os.path.pardir))
-            if os.path.dirname(dir) == dir: # root
-                return None
+        git_root = None
+        with subprocess.Popen(['git', 'rev-parse', '--show-toplevel'], stdout=subprocess.PIPE, cwd=os.path.dirname(filename)) as proc:
+            git_root = proc.stdout.read().decode('utf-8').strip()
+
+        return git_root
 
     def get_region_name_by_selector(self, region, selector):
         """get name matching the selector lie directly on current cursor position
