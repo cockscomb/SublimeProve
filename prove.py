@@ -87,7 +87,7 @@ class ProveCommand(ExecTestCommand):
 
     def modified_environ(self, env, test_file, method_name):
         return env
-        
+
     def test_file_name_by_class_name(self, class_name):
         if re.match('^t::', class_name):
             return self.view.file_name()
