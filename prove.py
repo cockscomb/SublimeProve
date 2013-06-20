@@ -29,10 +29,21 @@ class ExecTestCommand(sublime_plugin.TextCommand):
 
         def async_execute():
             with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory, env=env) as proc:
-                output = proc.stdout.read().decode('utf-8')
+                output = self.command_label(args, env)
+                output += '\n' + '-' * 80 + '\n'
+                output += proc.stdout.read().decode('utf-8')
                 sublime.set_timeout(self.show_panel(output), 0) # Do in main thread
 
         sublime.set_timeout_async(async_execute, 0) # Async
+
+    def command_label(self, args, env):
+        """return command line input like label"""
+        del env['PATH']
+        output = ''
+        for key, value in env.items():
+            output += '{}={} '.format(key, value)
+        output += ' '.join(args)
+        return output
 
     def commands(self, test_file, method_name):
         """override this"""
