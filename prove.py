@@ -101,7 +101,7 @@ class ProveCommand(ExecTestCommand):
 
     def test_file_name_by_class_name(self, class_name):
         if re.match('^t::', class_name):
-            return self.view.file_name()
+            return os.path.relpath(self.view.file_name(), start=self.get_project_root())
 
         parts = re.split('\W+', class_name)
         parts.pop(-1)
