@@ -1,4 +1,5 @@
 import sublime, sublime_plugin
+import copy
 import os.path
 import re
 import subprocess
@@ -27,20 +28,26 @@ class ExecTestCommand(sublime_plugin.TextCommand):
             print('Cannot get project root')
             return
 
+        self.show_panel()
+        output = self.command_label(args, env)
+        output += '\n' + '-' * 80 + '\n'
+        self.output(output)
+
         def async_execute():
-            with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=directory, env=env) as proc:
-                output = self.command_label(args, env)
-                output += '\n' + '-' * 80 + '\n'
-                output += proc.stdout.read().decode('utf-8')
-                sublime.set_timeout(self.show_panel(output), 0) # Do in main thread
+            with subprocess.Popen(args, bufsize=0, stdout=subprocess.PIPE, cwd=directory, env=env) as proc:
+                while True:
+                    line = proc.stdout.readline()
+                    if not line: break
+                    sublime.set_timeout(self.output(line.decode('utf-8')), 0)
 
         sublime.set_timeout_async(async_execute, 0) # Async
 
     def command_label(self, args, env):
         """return command line input like label"""
-        del env['PATH']
+        temp_env = copy.deepcopy(env)
+        del temp_env['PATH']
         output = ''
-        for key, value in env.items():
+        for key, value in temp_env.items():
             output += '{}={} '.format(key, value)
         output += ' '.join(args)
         return output
@@ -57,11 +64,14 @@ class ExecTestCommand(sublime_plugin.TextCommand):
         """override this"""
         return class_name
 
-    def show_panel(self, text):
+    def show_panel(self):
         """show output on panel"""
-        output_panel = self.view.window().create_output_panel('prove_result_panel')
-        output_panel.run_command('append', {'characters': text})
+        self.output_panel = self.view.window().create_output_panel('prove_result_panel')
         self.view.window().run_command('show_panel', {'panel': 'output.prove_result_panel'})
+
+    def output(self, text):
+        """append text to output panel"""
+        self.output_panel.run_command('append', {'characters': text})
 
     def get_project_root(self):
         """find git repository root with git command"""
@@ -94,7 +104,7 @@ class ExecTestCommand(sublime_plugin.TextCommand):
 
 class ProveCommand(ExecTestCommand):
     def commands(self, test_file, method_name):
-        return ['carton', 'exec', '--', 'prove', test_file, '-v']
+        return ['carton', 'exec', '--', 'prove', test_file, '-v', '-m']
 
     def modified_environ(self, env, test_file, method_name):
         return env
@@ -110,7 +120,7 @@ class ProveCommand(ExecTestCommand):
 
 class ProveAllCommand(ProveCommand):
     def commands(self, test_file, method_name):
-        return ['carton', 'exec', '--', 'prove', '-v']
+        return ['carton', 'exec', '--', 'prove', '-v', '-m']
 
 class ProveMethodCommand(ProveCommand):
     def modified_environ(self, env, test_file, method_name):
