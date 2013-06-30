@@ -35,9 +35,7 @@ class ExecTestCommand(sublime_plugin.TextCommand):
 
         def async_execute():
             with subprocess.Popen(args, bufsize=0, stdout=subprocess.PIPE, cwd=directory, env=env) as proc:
-                while True:
-                    line = proc.stdout.readline()
-                    if not line: break
+                for line in proc.stdout:
                     sublime.set_timeout(self.output(line.decode('utf-8')), 0)
 
         sublime.set_timeout_async(async_execute, 0) # Async
